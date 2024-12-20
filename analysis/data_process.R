@@ -143,34 +143,6 @@ n_histo_bari_hosp_onset_monthly_midpoint6 <- data_processed %>%
   ) %>%
   arrange(time_interval)
 
-### Baricitinib, outpatient
-## Histogram, in monthly counts (binwidth = 30)
-histo_bari_outpatient_monthly <- ggplot(data_processed, aes(x = exp_date_bari_outpatient_first)) +
-  geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
-  labs(
-    title = "Number of Persons Treated Over Time",
-    x = "Date of First Baricitinib Outpatient Treatment",
-    y = "Number of Persons"
-  ) +
-  theme_minimal()
-# Show aggregate data for this histogram
-n_histo_bari_outpatient_monthly <- data_processed %>%
-  mutate(time_interval = floor_date(exp_date_bari_outpatient_first, "month")) %>%
-  group_by(time_interval) %>%
-  summarise(
-    count = n()
-  ) %>%
-  arrange(time_interval) # Ensure chronological order
-# rounded to midpoint6
-n_histo_bari_outpatient_monthly_midpoint6 <- data_processed %>%
-  mutate(time_interval = floor_date(exp_date_bari_outpatient_first, "month")) %>%
-  group_by(time_interval) %>%
-  summarise(
-    count = fn_roundmid_any(n(), threshold)
-  ) %>%
-  arrange(time_interval)
-
-
 ################################################################################
 # 6 Save output
 ################################################################################
@@ -189,9 +161,3 @@ ggsave(
   plot=histo_bari_hosp_onset_monthly)
 write.csv(n_histo_bari_hosp_onset_monthly, file = here::here("output", "data_properties", "n_histo_bari_hosp_onset_monthly.csv"))
 write.csv(n_histo_bari_hosp_onset_monthly_midpoint6, file = here::here("output", "data_properties", "n_histo_bari_hosp_onset_monthly_midpoint6.csv"))
-
-ggsave(
-  filename = here::here("output", "data_properties", "histo_bari_outpatient_monthly.png"),
-  plot=histo_bari_outpatient_monthly)
-write.csv(n_histo_bari_outpatient_monthly, file = here::here("output", "data_properties", "n_histo_bari_outpatient_monthly.csv"))
-write.csv(n_histo_bari_outpatient_monthly_midpoint6, file = here::here("output", "data_properties", "n_histo_bari_outpatient_monthly_midpoint6.csv"))
