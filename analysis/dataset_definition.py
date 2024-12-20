@@ -153,8 +153,8 @@ dataset.cov_status_bari_hosp_first = first_matching_event_bari_between("hospital
 
 ## Comorbidities ##
 ## Solid cancer
-dataset.cov_solid_cancer_new = (last_matching_event_clinical_snomed_between(non_haematological_cancer_opensafely_snomed_codes_new + lung_cancer_opensafely_snomed_codes + chemotherapy_radiotherapy_opensafely_snomed_codes, index_date - days(180), index_date).exists_for_patient())
-dataset.cov_solid_cancer_ever = (last_matching_event_clinical_snomed_before(non_haematological_cancer_opensafely_snomed_codes_new + lung_cancer_opensafely_snomed_codes + chemotherapy_radiotherapy_opensafely_snomed_codes, index_date).exists_for_patient())
+dataset.cov_solid_cancer_new = last_matching_event_clinical_snomed_between(non_haematological_cancer_opensafely_snomed_codes_new + lung_cancer_opensafely_snomed_codes + chemotherapy_radiotherapy_opensafely_snomed_codes, index_date - days(180), index_date).exists_for_patient()
+dataset.cov_solid_cancer_ever = last_matching_event_clinical_snomed_before(non_haematological_cancer_opensafely_snomed_codes_new + lung_cancer_opensafely_snomed_codes + chemotherapy_radiotherapy_opensafely_snomed_codes, index_date).exists_for_patient()
 
 
 
