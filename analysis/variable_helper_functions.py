@@ -5,8 +5,15 @@ from ehrql.tables.tpp import (
     apcs,
     clinical_events, 
     medications,
-    covid_therapeutics
+    covid_therapeutics,
+    ons_deaths
 )
+
+### HELPER functions, based on https://github.com/opensafely/comparative-booster-spring2023/blob/main/analysis/dataset_definition.py
+import operator
+from functools import reduce
+def any_of(conditions):
+    return reduce(operator.or_, conditions)
 
 #######################################################################################
 ### COUNT all prior events (including index_date)
@@ -192,3 +199,30 @@ def most_recent_bmi(*, minimum_age_at_measurement, where=True):
         .sort_by(clinical_events.date)
         .last_for_patient()
     )
+
+#######################################################################################
+### Causes of death
+#######################################################################################
+# without any date restrictions
+def cause_of_death_matches(codelist):
+    conditions = [
+        getattr(ons_deaths, column_name).is_in(codelist)
+        for column_name in (["underlying_cause_of_death"]+[f"cause_of_death_{i:02d}" for i in range(1, 16)])
+    ]
+    return any_of(conditions)
+
+# before date
+def matching_death_before(codelist, baseline_date, where=True):
+    conditions = [
+        getattr(ons_deaths, column_name).is_in(codelist)
+        for column_name in (["underlying_cause_of_death"]+[f"cause_of_death_{i:02d}" for i in range(1, 16)])
+    ]
+    return any_of(conditions) & ons_deaths.date.is_before(baseline_date)
+
+# between
+def matching_death_between(codelist, baseline_date, end_date, where=True):
+    conditions = [
+        getattr(ons_deaths, column_name).is_in(codelist)
+        for column_name in (["underlying_cause_of_death"]+[f"cause_of_death_{i:02d}" for i in range(1, 16)])
+    ]
+    return any_of(conditions) & ons_deaths.date.is_on_or_between(baseline_date, end_date)

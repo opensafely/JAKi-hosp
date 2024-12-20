@@ -15,19 +15,31 @@ library('here')
 library('lubridate')
 library('dplyr')
 library('tidyr')
-
 library('ggplot2')
-
 
 ## Import custom user functions
 source(here::here("analysis", "functions", "fn_extract_data.R"))
 source(here::here("analysis", "functions", "fn_case_when.R"))
 source(here::here("analysis", "functions", "fn_roundmid_any.R"))
+source(here::here("analysis", "functions", "fn_quality_assurance_midpoint6.R"))
 
 ################################################################################
-# 0.1 Define redaction threshold
+# 0.1 Create directories for output
+################################################################################
+fs::dir_create(here::here("output", "data"))
+fs::dir_create(here::here("output", "data_properties"))
+
+################################################################################
+# 0.2 Define redaction threshold
 ################################################################################
 threshold <- 6
+
+################################################################################
+# 0.3 Import dates
+################################################################################
+source(here::here("analysis", "metadates.R"))
+# Convert the meta-dates into Date objects
+study_dates <- lapply(study_dates, function(x) as.Date(x))
 
 ################################################################################
 # 1 Import data
@@ -44,6 +56,17 @@ data_extracted <- fn_extract_data(input_filename)
 ################################################################################
 data_processed <- data_extracted %>%
   mutate(
+    cov_cat_age = cut(
+      cov_num_age,
+      breaks = c(18, 40, 60, 80, 110),
+      labels = c("18-39", "40-59", "60-79", "80+"),
+      right = FALSE),
+    
+    cov_cat_sex = fn_case_when(
+      cov_cat_sex == "female" ~ "Female",
+      cov_cat_sex == "male" ~ "Male",
+      TRUE ~ NA_character_),
+    
     ethnicity_cat = fn_case_when(
       ethnicity_cat == "1" ~ "White",
       ethnicity_cat == "4" ~ "Black",
@@ -51,15 +74,22 @@ data_processed <- data_extracted %>%
       ethnicity_cat == "2" ~ "Mixed",
       ethnicity_cat == "5" ~ "Other",
       ethnicity_cat == "0" ~ "Unknown",
-      TRUE ~ NA_character_) # if ethnicity is NA, it remains NA -> will not influence diabetes algo, except that for step 5 only age will be used for these cases
+      TRUE ~ NA_character_)
     )
 
 ################################################################################
-# 4 Exposure
+# 4 Apply the quality assurance criteria
+################################################################################
+qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
+n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
+data_processed <- qa$data_processed
+
+################################################################################
+# 5 Exposure
 ################################################################################
 ### Baricitinib, at hosp admission
 ## Histogram, in monthly counts (binwidth = 30)
-ggplot(data_processed, aes(x = exp_date_bari_hosp_first)) +
+histo_bari_hosp_monthly <- ggplot(data_processed, aes(x = exp_date_bari_hosp_first)) +
   geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
   labs(
     title = "Number of Persons Treated Over Time",
@@ -86,7 +116,7 @@ n_histo_bari_hosp_monthly_midpoint6 <- data_processed %>%
 
 ### Baricitinib, hosp onset
 ## Histogram, in monthly counts (binwidth = 30)
-ggplot(data_processed, aes(x = exp_date_bari_hosp_onset_first)) +
+histo_bari_hosp_onset_monthly <- ggplot(data_processed, aes(x = exp_date_bari_hosp_onset_first)) +
   geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
   labs(
     title = "Number of Persons Treated Over Time",
@@ -113,7 +143,7 @@ n_histo_bari_hosp_onset_monthly_midpoint6 <- data_processed %>%
 
 ### Baricitinib, outpatient
 ## Histogram, in monthly counts (binwidth = 30)
-ggplot(data_processed, aes(x = exp_date_bari_outpatient_first)) +
+histo_bari_outpatient_monthly <- ggplot(data_processed, aes(x = exp_date_bari_outpatient_first)) +
   geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
   labs(
     title = "Number of Persons Treated Over Time",
@@ -140,54 +170,26 @@ n_histo_bari_outpatient_monthly_midpoint6 <- data_processed %>%
 
 
 ################################################################################
-# 4 Save output
+# 6 Save output
 ################################################################################
 # the data
 write_rds(data_processed, here::here("output", "data_processed.rds"))
 
-# histograms, png and underlying aggregate data
-# Save the histo as a PNG file
+# histograms (as png), and underlying aggregate data
 ggsave(
   filename = here::here("output", "data_properties", "histo_bari_hosp_monthly.png"),
-  plot = ggplot(data_processed, aes(x = exp_date_bari_hosp_first)) +
-    geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
-    labs(
-      title = "Number of Persons Treated Over Time",
-      x = "Date of First Baricitinib In-Hosp Treatment",
-      y = "Number of Persons"
-    ) +
-    theme_minimal(),
-  width = 8, height = 6, dpi = 300
-)
+  plot=histo_bari_hosp_monthly)
 write.csv(n_histo_bari_hosp_monthly, file = here::here("output", "data_properties", "n_histo_bari_hosp_monthly.csv"))
 write.csv(n_histo_bari_hosp_monthly_midpoint6, file = here::here("output", "data_properties", "n_histo_bari_hosp_monthly_midpoint6.csv"))
 
 ggsave(
   filename = here::here("output", "data_properties", "histo_bari_hosp_onset_monthly.png"),
-  plot = ggplot(data_processed, aes(x = exp_date_bari_hosp_onset_first)) +
-    geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
-    labs(
-      title = "Number of Persons Treated Over Time",
-      x = "Date of First Baricitinib Hosp Onset Treatment",
-      y = "Number of Persons"
-    ) +
-    theme_minimal(),
-  width = 8, height = 6, dpi = 300
-)
+  plot=histo_bari_hosp_onset_monthly)
 write.csv(n_histo_bari_hosp_onset_monthly, file = here::here("output", "data_properties", "n_histo_bari_hosp_onset_monthly.csv"))
 write.csv(n_histo_bari_hosp_onset_monthly_midpoint6, file = here::here("output", "data_properties", "n_histo_bari_hosp_onset_monthly_midpoint6.csv"))
 
 ggsave(
   filename = here::here("output", "data_properties", "histo_bari_outpatient_monthly.png"),
-  plot = ggplot(data_processed, aes(x = exp_date_bari_outpatient_first)) +
-    geom_histogram(binwidth = 30, fill = "green", color = "black", boundary = 0) + 
-    labs(
-      title = "Number of Persons Treated Over Time",
-      x = "Date of First Baricitinib Outpatient Treatment",
-      y = "Number of Persons"
-    ) +
-    theme_minimal(),
-  width = 8, height = 6, dpi = 300
-)
+  plot=histo_bari_outpatient_monthly)
 write.csv(n_histo_bari_outpatient_monthly, file = here::here("output", "data_properties", "n_histo_bari_outpatient_monthly.csv"))
 write.csv(n_histo_bari_outpatient_monthly_midpoint6, file = here::here("output", "data_properties", "n_histo_bari_outpatient_monthly_midpoint6.csv"))
