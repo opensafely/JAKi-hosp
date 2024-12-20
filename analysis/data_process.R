@@ -84,6 +84,8 @@ qa <- fn_quality_assurance_midpoint6(data_processed, study_dates, threshold)
 n_qa_excluded_midpoint6 <- qa$n_qa_excluded_midpoint6
 data_processed <- qa$data_processed
 
+#table(data_processed$exp_status_bari_hosp_first) # check!
+
 ################################################################################
 # 5 Exposure
 ################################################################################

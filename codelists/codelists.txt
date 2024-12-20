@@ -6,3 +6,20 @@ user/elsie_horne/cocp_dmd/1666a7a3
 user/elsie_horne/hrt_dmd/19196799
 
 opensafely/ethnicity/2020-04-27
+
+opensafely/smoking-clear/2020-04-29
+user/alainamstutz/ever-smoking-bristol/00731978
+primis-covid19-vacc-uptake/longres/v1
+
+opensafely/cancer-excluding-lung-and-haematological-snomed/2020-04-15
+opensafely/lung-cancer-snomed/2020-04-15
+opensafely/chemotherapy-or-radiotherapy-snomed/2020-04-15
+
+
+
+opensafely/covid-identification-in-primary-care-probable-covid-positive-test/2020-07-16
+opensafely/covid-identification-in-primary-care-probable-covid-clinical-code/2020-07-16
+opensafely/covid-identification-in-primary-care-probable-covid-sequelae/2020-07-16
+user/RochelleKnight/confirmed-hospitalised-covid-19/1f0d2526
+
+
